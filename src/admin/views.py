@@ -286,6 +286,7 @@ class UserAdmin(ModelView, model=User):
         User.is_blocked: "Заблокирован",
         User.terms_accepted_at: "Дата принятия оферты",
         User.accepted_legal_version: "Версия оферты",
+        User.admin_comment: "Комментарий админа",
     }
 
     # Колонки в списке пользователей
@@ -306,6 +307,7 @@ class UserAdmin(ModelView, model=User):
         User.username,
         User.first_name,
         User.last_name,
+        User.admin_comment,
     ]
 
     # Подсказка в поле поиска
@@ -382,6 +384,7 @@ class UserAdmin(ModelView, model=User):
         User.created_at,
         User.terms_accepted_at,
         User.accepted_legal_version,
+        User.admin_comment,
         # Связанные объекты
         "subscriptions",
         "payments",
@@ -397,6 +400,7 @@ class UserAdmin(ModelView, model=User):
         User.source,
         User.balance,
         User.is_blocked,
+        User.admin_comment,
     ]
 
     # Описания полей в форме редактирования
@@ -407,6 +411,12 @@ class UserAdmin(ModelView, model=User):
                 "при первом запуске бота. Используется для отслеживания "
                 "рекламных кампаний и источников трафика. "
                 "Например: instagram, youtube, friend123"
+            ),
+        },
+        "admin_comment": {
+            "description": (
+                "Заметка для администратора. Пользователь её не видит. "
+                "Используйте для пометок: VIP, проблемный, особые условия и т.д."
             ),
         },
     }

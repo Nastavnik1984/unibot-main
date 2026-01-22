@@ -115,6 +115,11 @@ class User(Base):
         default=False, nullable=False
     )
 
+    # Комментарий администратора — заметка для служебного пользования.
+    # Видна только в админ-панели, пользователь бота её не видит.
+    # Используется для пометок о пользователе (VIP, проблемный, заметки).
+    admin_comment: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+
     # Связь с сообщениями (история диалогов)
     # back_populates — двусторонняя связь с Message.user
     # cascade="all, delete-orphan" — при удалении пользователя
