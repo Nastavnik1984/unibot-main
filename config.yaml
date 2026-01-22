@@ -461,8 +461,8 @@ commands:
   #   - Скрыть из меню: show_in_menu: false
   #   - Полностью отключить: enabled: false
   error:
-    enabled: true
-    show_in_menu: true
+    enabled: false
+    show_in_menu: false
     menu_description:
       ru: "⚠️ Тестовая ошибка"
       en: "⚠️ Test error"
