@@ -329,6 +329,15 @@ def get_command_registry() -> CommandRegistry:
         ).router,
     )
 
+    # /generate — генерация описаний товаров для маркетплейсов
+    # Использует GPT-5 Nano для создания продающих описаний
+    _registry.register(
+        name="generate",
+        router_factory=lambda: __import__(
+            "src.bot.handlers.generate", fromlist=["router"]
+        ).router,
+    )
+
     # /clear — очистка истории диалога
     _registry.register(
         name="clear",

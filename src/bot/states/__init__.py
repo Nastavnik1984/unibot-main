@@ -12,6 +12,7 @@ FSM используется для управления многошаговы�
 
 from src.bot.states.chatgpt import ChatGPTStates
 from src.bot.states.edit_image import EditImageStates
+from src.bot.states.generate import GenerateStates
 from src.bot.states.imagine import ImagineStates
 
-__all__ = ["ChatGPTStates", "EditImageStates", "ImagineStates"]
+__all__ = ["ChatGPTStates", "EditImageStates", "GenerateStates", "ImagineStates"]
