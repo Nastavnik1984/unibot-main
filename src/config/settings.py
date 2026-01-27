@@ -161,8 +161,21 @@ def load_settings() -> Settings:
     Returns:
         Объект Settings с загруженными настройками.
     """
+    import os
+
+    # Отладка: показываем откуда читаются настройки
+    env_file_exists = ENV_FILE.exists() if ENV_FILE else False
+    bot_token_in_env = "BOT__TOKEN" in os.environ
+
+    print(f"[DEBUG settings] CWD: {os.getcwd()}", file=sys.stderr)
+    print(f"[DEBUG settings] ENV_FILE: {ENV_FILE}", file=sys.stderr)
+    print(f"[DEBUG settings] ENV_FILE exists: {env_file_exists}", file=sys.stderr)
+    print(f"[DEBUG settings] BOT__TOKEN in os.environ: {bot_token_in_env}", file=sys.stderr)
+
     try:
-        return Settings()
+        result = Settings()
+        print(f"[DEBUG settings] Токен загружен успешно!", file=sys.stderr)
+        return result
     except ValidationError as e:
         # Выводим понятную ошибку на русском
         print(_format_validation_error(e), file=sys.stderr)
