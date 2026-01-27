@@ -24,6 +24,7 @@ from src.bot.middleware import (
     GenerationCooldownMiddleware,
     LegalConsentMiddleware,
     PrivateChatMiddleware,
+    create_banned_user_middleware,
     create_language_middleware,
 )
 from src.config.yaml_config import YamlConfig
@@ -49,10 +50,11 @@ def setup_middlewares(
 
     Порядок регистрации важен:
     1. PrivateChatMiddleware — фильтрует сообщения только из личных чатов (ПЕРВЫЙ!)
-    2. LanguageMiddleware — определяет язык пользователя
-    3. ChannelSubscriptionMiddleware — проверяет подписку на канал (требует l10n)
-    4. LegalConsentMiddleware — проверяет согласие с юр. документами (требует l10n)
-    5. GenerationCooldownMiddleware — контролирует cooldown между генерациями
+    2. BannedUserMiddleware — проверяет забаненных пользователей (is_blocked в БД)
+    3. LanguageMiddleware — определяет язык пользователя
+    4. ChannelSubscriptionMiddleware — проверяет подписку на канал (требует l10n)
+    5. LegalConsentMiddleware — проверяет согласие с юр. документами (требует l10n)
+    6. GenerationCooldownMiddleware — контролирует cooldown между генерациями
 
     Args:
         dp: Диспетчер aiogram.
@@ -70,6 +72,13 @@ def setup_middlewares(
     dp.message.middleware(private_chat_middleware)
     dp.callback_query.middleware(private_chat_middleware)
     registered_middlewares.append("PrivateChatMiddleware")
+
+    # BannedUserMiddleware — проверяет забаненных пользователей (is_blocked в БД)
+    # Забаненным отвечает "Вы забанены" и не пропускает дальше
+    banned_user_middleware = create_banned_user_middleware()
+    dp.message.middleware(banned_user_middleware)
+    dp.callback_query.middleware(banned_user_middleware)
+    registered_middlewares.append("BannedUserMiddleware")
 
     # LanguageMiddleware — определяет язык до выполнения handlers
     language_middleware = create_language_middleware()

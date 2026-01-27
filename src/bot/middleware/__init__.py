@@ -6,6 +6,8 @@ Middleware обрабатывают входящие события перед �
 
 Доступные middleware:
 - PrivateChatMiddleware: Фильтрация сообщений только из личных чатов
+- BannedUserMiddleware: Проверка забаненных пользователей (is_blocked в БД)
+- create_banned_user_middleware: Factory function для создания BannedUserMiddleware
 - GenerationCooldownMiddleware: Защита от спама генераций через cooldowns
 - CooldownError: Исключение при нарушении cooldown
 - LanguageMiddleware: Определение языка пользователя и создание Localization
@@ -17,6 +19,10 @@ Middleware обрабатывают входящие события перед �
 - create_legal_consent_middleware: Factory function для создания middleware
 """
 
+from src.bot.middleware.banned_user import (
+    BannedUserMiddleware,
+    create_banned_user_middleware,
+)
 from src.bot.middleware.channel_subscription import (
     CALLBACK_CHECK_SUBSCRIPTION,
     ChannelSubscriptionMiddleware,
@@ -36,12 +42,14 @@ from src.core.exceptions import CooldownError
 
 __all__ = [
     "CALLBACK_CHECK_SUBSCRIPTION",
+    "BannedUserMiddleware",
     "ChannelSubscriptionMiddleware",
     "CooldownError",
     "GenerationCooldownMiddleware",
     "LanguageMiddleware",
     "LegalConsentMiddleware",
     "PrivateChatMiddleware",
+    "create_banned_user_middleware",
     "create_channel_subscription_middleware",
     "create_language_middleware",
     "create_legal_consent_middleware",

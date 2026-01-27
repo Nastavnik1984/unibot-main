@@ -263,6 +263,7 @@ class UserAdmin(ModelView, model=User):
     - Просматривать список всех пользователей
     - Искать по telegram_id и username
     - Редактировать данные пользователя
+    - Забанить/разбанить пользователя кнопками
     """
 
     # Название в меню админки
@@ -428,6 +429,102 @@ class UserAdmin(ModelView, model=User):
     # Разрешаем экспорт в CSV
     can_export = True
     export_types = ["csv"]
+
+    # =========================================================================
+    # КНОПКИ УПРАВЛЕНИЯ БАНОМ
+    # =========================================================================
+
+    @action(
+        name="ban_users",
+        label="🚫 Забанить",
+        confirmation_message="Вы уверены, что хотите забанить выбранных пользователей? "
+        "Они не смогут пользоваться ботом.",
+        add_in_detail=True,
+        add_in_list=True,
+    )
+    async def action_ban_users(self, request: Request) -> RedirectResponse:
+        """Забанить выбранных пользователей (is_blocked=True).
+
+        После бана пользователь получает сообщение "Вы забанены"
+        на любое сообщение боту.
+        """
+        from src.db.base import DatabaseSession
+
+        pks_param = request.query_params.get("pks", "")
+        pks: list[str] = [pk.strip() for pk in pks_param.split(",") if pk.strip()]
+
+        success_count = 0
+
+        async with DatabaseSession() as session:
+            for pk in pks:
+                try:
+                    user = await session.get(User, int(pk))
+                    if user and not user.is_blocked:
+                        user.is_blocked = True
+                        success_count += 1
+                except (ValueError, TypeError):
+                    continue
+
+            await session.commit()
+
+        # Формируем сообщение и редирект
+        referer = request.headers.get("Referer", "")
+        list_url = str(request.url_for("admin:list", identity=self.identity))
+        redirect_url = referer or list_url
+
+        if success_count > 0:
+            msg = f"Забанено пользователей: {success_count}"
+            redirect_url = _build_flash_redirect(redirect_url, msg, "success")
+        else:
+            msg = "Нет пользователей для бана (уже забанены или не найдены)"
+            redirect_url = _build_flash_redirect(redirect_url, msg, "warning")
+
+        return RedirectResponse(redirect_url, status_code=302)
+
+    @action(
+        name="unban_users",
+        label="✅ Разбанить",
+        confirmation_message="Вы уверены, что хотите разбанить выбранных пользователей?",
+        add_in_detail=True,
+        add_in_list=True,
+    )
+    async def action_unban_users(self, request: Request) -> RedirectResponse:
+        """Разбанить выбранных пользователей (is_blocked=False).
+
+        После разбана пользователь снова может пользоваться ботом.
+        """
+        from src.db.base import DatabaseSession
+
+        pks_param = request.query_params.get("pks", "")
+        pks: list[str] = [pk.strip() for pk in pks_param.split(",") if pk.strip()]
+
+        success_count = 0
+
+        async with DatabaseSession() as session:
+            for pk in pks:
+                try:
+                    user = await session.get(User, int(pk))
+                    if user and user.is_blocked:
+                        user.is_blocked = False
+                        success_count += 1
+                except (ValueError, TypeError):
+                    continue
+
+            await session.commit()
+
+        # Формируем сообщение и редирект
+        referer = request.headers.get("Referer", "")
+        list_url = str(request.url_for("admin:list", identity=self.identity))
+        redirect_url = referer or list_url
+
+        if success_count > 0:
+            msg = f"Разбанено пользователей: {success_count}"
+            redirect_url = _build_flash_redirect(redirect_url, msg, "success")
+        else:
+            msg = "Нет пользователей для разбана (уже разбанены или не найдены)"
+            redirect_url = _build_flash_redirect(redirect_url, msg, "warning")
+
+        return RedirectResponse(redirect_url, status_code=302)
 
 
 class SubscriptionAdmin(ModelView, model=Subscription):
