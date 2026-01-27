@@ -23,6 +23,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 ENV_FILE = PROJECT_ROOT / ".env"
 
+# Если файл .env существует — используем его, иначе None (только переменные окружения)
+# Это нужно для Amvera и других облачных платформ, где секреты задаются
+# через переменные окружения в панели управления, а не через файл .env
+ENV_FILE_PATH = ENV_FILE if ENV_FILE.exists() else None
+
 # Импортируем классы настроек из models.py
 # Это позволяет тестам импортировать классы без побочных эффектов
 from src.config.models import (
@@ -74,19 +79,28 @@ __all__ = [
 # Значение — понятное описание ошибки и как её исправить
 
 FIELD_ERROR_MESSAGES: dict[str, str] = {
-    "bot": "Не указана переменная BOT__TOKEN в файле .env",
-    "bot.token": "Не указана переменная BOT__TOKEN в файле .env",
+    "bot": "Не указана переменная BOT__TOKEN (в файле .env или переменных окружения)",
+    "bot.token": "Не указана переменная BOT__TOKEN (в файле .env или переменных окружения)",
 }
 
 # Сообщение по умолчанию для неизвестных полей
-DEFAULT_ERROR_MESSAGE = "Ошибка конфигурации. Проверьте файл .env"
+DEFAULT_ERROR_MESSAGE = "Ошибка конфигурации. Проверьте файл .env или переменные окружения"
 
 
 class Settings(BaseSettings):
-    """Главные настройки приложения."""
+    """Главные настройки приложения.
+
+    Настройки загружаются из двух источников (в порядке приоритета):
+    1. Переменные окружения (приоритет выше)
+    2. Файл .env (если существует)
+
+    На локальной машине: используется файл .env
+    На Amvera/облаке: переменные задаются в панели управления
+    """
 
     model_config = SettingsConfigDict(
-        env_file=ENV_FILE,  # Абсолютный путь, чтобы работало из любой директории
+        # Если файл .env есть — читаем из него, если нет — только из переменных окружения
+        env_file=ENV_FILE_PATH,
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
         extra="ignore",
