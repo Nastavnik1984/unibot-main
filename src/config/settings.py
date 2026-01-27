@@ -13,9 +13,15 @@
 """
 
 import sys
+from pathlib import Path
 
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Путь к корню проекта (вычисляем от текущего файла)
+# src/config/settings.py → src/config → src → корень проекта
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+ENV_FILE = PROJECT_ROOT / ".env"
 
 # Импортируем классы настроек из models.py
 # Это позволяет тестам импортировать классы без побочных эффектов
@@ -80,7 +86,7 @@ class Settings(BaseSettings):
     """Главные настройки приложения."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,  # Абсолютный путь, чтобы работало из любой директории
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
         extra="ignore",
