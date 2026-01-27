@@ -213,6 +213,7 @@ class GenerationTimeouts(BaseModel):
     - chat: 60 сек (обычно ответ приходит за 5-30 сек)
     - image: 180 сек (генерация может занять 1-2 минуты)
     - image_edit: 180 сек (редактирование изображений аналогично генерации)
+    - postcard: 180 сек (генерация открыток через InstantID)
     - tts: 120 сек (зависит от длины текста)
     - stt: 300 сек (зависит от длины аудио)
     """
@@ -220,6 +221,7 @@ class GenerationTimeouts(BaseModel):
     chat: int = 60
     image: int = 180
     image_edit: int = 180
+    postcard: int = 180
     tts: int = 120
     stt: int = 300
 
@@ -239,6 +241,7 @@ class GenerationCooldowns(BaseModel):
     chat: int = 2
     image: int = 10
     image_edit: int = 10
+    postcard: int = 10
     tts: int = 5
     stt: int = 5
 

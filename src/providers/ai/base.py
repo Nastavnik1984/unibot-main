@@ -51,6 +51,12 @@ class GenerationType(StrEnum):
     # Использует мультимодальный Chat API с изображением в input
     IMAGE_EDIT = "image_edit"
 
+    # Генерация открыток с сохранением лица (InstantID, PhotoMaker)
+    # Вход: фото лица + текстовый промпт с описанием открытки
+    # Выход: URL изображения открытки с узнаваемым лицом
+    # Использует специализированные модели (InstantID, IP-Adapter)
+    POSTCARD = "postcard"
+
 
 class GenerationStatus(StrEnum):
     """Статус генерации.

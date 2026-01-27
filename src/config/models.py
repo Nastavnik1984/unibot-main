@@ -121,8 +121,10 @@ class AIProvidersSettings(BaseModel):
     Поддерживаемые провайдеры:
     - OpenRouter (https://openrouter.ai) — агрегатор моделей
     - RouterAI (https://routerai.ru) — российский сервис
+    - Replicate (https://replicate.com) — платформа ML-моделей (InstantID)
 
-    Оба провайдера OpenAI-совместимые, работают через единый адаптер.
+    OpenRouter и RouterAI — OpenAI-совместимые, работают через единый адаптер.
+    Replicate — отдельный адаптер для моделей с сохранением лица (InstantID).
     """
 
     # OpenRouter API ключ.
@@ -130,6 +132,11 @@ class AIProvidersSettings(BaseModel):
 
     # RouterAI API ключ.
     routerai_api_key: SecretStr | None = None
+
+    # Replicate API ключ.
+    # Нужен для генерации открыток с сохранением лица (InstantID).
+    # Получить: https://replicate.com/account/api-tokens
+    replicate_api_key: SecretStr | None = None
 
     @property
     def has_openrouter(self) -> bool:
@@ -140,6 +147,11 @@ class AIProvidersSettings(BaseModel):
     def has_routerai(self) -> bool:
         """Проверить, настроен ли RouterAI."""
         return self.routerai_api_key is not None
+
+    @property
+    def has_replicate(self) -> bool:
+        """Проверить, настроен ли Replicate."""
+        return self.replicate_api_key is not None
 
 
 class FSMSettings(BaseModel):

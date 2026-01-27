@@ -28,3 +28,4 @@ class GenerateStates(StatesGroup):
     waiting_for_product_info = State()
 
 
+

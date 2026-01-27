@@ -23,6 +23,7 @@ start_message: |
   💬 /chatgpt — chat with AI
   🎨 /imagine — generate images
   ✏️ /edit_image — edit images
+  🎴 /postcard — create greeting card
   🗑️ /clear — clear chat history
   💰 /balance — check your balance
   ⚙️ /settings — settings
@@ -599,6 +600,7 @@ help_message_with_contact: |
   • 💬 /chatgpt — chat with AI
   • 🎨 /imagine — image generation
   • ✏️ /edit_image — image editing
+  • 🎴 /postcard — create greeting card
   • 💰 /balance — check token balance
   • ⚙️ /settings — settings
 
@@ -614,6 +616,7 @@ help_message_no_contact: |
   • 💬 /chatgpt — chat with AI
   • 🎨 /imagine — image generation
   • ✏️ /edit_image — image editing
+  • 🎴 /postcard — create greeting card
   • 💰 /balance — check token balance
   • ⚙️ /settings — settings
 
@@ -758,6 +761,93 @@ legal_not_configured: |
   ⚠️ Legal documents are not yet configured.
 
   Please contact the bot administrator.
+
+# ==============================================================================
+# POSTCARD (GREETING CARD GENERATOR)
+# ==============================================================================
+
+# Message on /postcard command — requesting photo
+postcard_send_image: |
+  🎴 <b>Greeting Card Generator</b>
+
+  Send a photo to create a festive greeting card.
+
+  📸 You can send:
+  • Your photo
+  • Family or friends photo
+  • Any photo to create a card
+
+  💡 Best results with clear photos of people!
+
+# Message if user didn't send a photo
+postcard_please_send_image: |
+  ❌ Please send a photo.
+
+  Text messages are not processed at this stage.
+  Use /postcard to start over.
+
+# Holiday selection
+postcard_choose_holiday: |
+  ✅ Photo received!
+
+  🎉 <b>Choose a holiday for your card:</b>
+
+  Select a theme, and AI will create a beautiful festive greeting card with your photo.
+
+# Holiday names
+postcard_holiday_new_year: "New Year"
+postcard_holiday_birthday: "Birthday"
+postcard_holiday_march_8: "International Women's Day"
+postcard_holiday_mothers_day: "Mother's Day"
+postcard_holiday_feb_23: "Defender's Day"
+postcard_holiday_valentines: "Valentine's Day"
+postcard_holiday_universal: "Universal (no occasion)"
+
+# Greeting text request
+# {holiday} — selected holiday name with emoji
+postcard_enter_greeting: |
+  🎨 Holiday: <b>{holiday}</b>
+
+  ✏️ Now enter the greeting text that will appear on the card.
+
+  📝 Examples:
+  • Happy New Year, dear family!
+  • Happy Birthday, Mary!
+  • To my beloved mom with love!
+
+  💡 Or click the button below to create a card without text.
+
+# Skip greeting text button
+postcard_skip_greeting: "⏭ Skip (no text)"
+
+# Card is being generated
+postcard_processing: "🎨 Creating your card... This will take a few seconds."
+
+# Photo download error
+postcard_image_download_error: "❌ Error downloading photo. Please try again."
+
+# AI returned empty response
+postcard_empty_response: "❌ Error: couldn't create the card. Please try again."
+
+# Card send error
+postcard_send_error: "❌ Error sending the card. Please try again."
+
+# Missing data error
+postcard_error_missing_data: "❌ Error: data lost. Use /postcard to start over."
+
+# Card successfully created
+# {holiday} — holiday with emoji, {greeting} — greeting text
+postcard_completed: |
+  🎴 <b>Your card is ready!</b>
+
+  🎉 Holiday: {holiday}
+  ✏️ Greeting: {greeting}
+
+  📤 Share your card with loved ones!
+  🔄 For a new card use /postcard
+
+# Text when no greeting provided
+postcard_no_greeting: "no text"
 
 # ==============================================================================
 # CHANNEL SUBSCRIPTION
