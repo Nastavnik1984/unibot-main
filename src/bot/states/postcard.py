@@ -41,3 +41,4 @@ class PostcardStates(StatesGroup):
     waiting_for_greeting_text = State()
 
 
+
