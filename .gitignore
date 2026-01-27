@@ -1,5 +1,5 @@
 # Environment
-.env
+# .env  # Временно закомментировано для деплоя на Amvera
 .venv
 .venv/
 venv/
