@@ -232,8 +232,29 @@ async def _handle_generation_error(
     if isinstance(error, UserNotFoundError):
         await processing_msg.edit_text(l10n.get("error_user_not_found"))
     elif isinstance(error, GenerationError):
-        await processing_msg.edit_text(l10n.get("generation_error"))
-        logger.error("Ошибка генерации открытки: %s", error.message)
+        # Проверяем, является ли это ошибкой "модель не сгенерировала изображение"
+        error_message_lower = error.message.lower() if error.message else ""
+        if "не сгенерировала" in error_message_lower or "не сгенерировало" in error_message_lower:
+            # Специфичная ошибка для открыток - показываем более понятное сообщение
+            await processing_msg.edit_text(
+                "❌ Ошибка генерации открытки.\n\n"
+                "Модель не смогла создать изображение. Возможные причины:\n"
+                "• Фото слишком маленькое или нечёткое\n"
+                "• На фото нет лица или оно плохо видно\n"
+                "• Проблемы с API провайдера\n\n"
+                "Попробуйте:\n"
+                "• Загрузить другое фото (чёткое, с хорошо видимым лицом)\n"
+                "• Попробовать ещё раз через несколько секунд\n"
+                "• Выбрать другой праздник"
+            )
+        else:
+            await processing_msg.edit_text(l10n.get("generation_error"))
+        logger.error(
+            "Ошибка генерации открытки: %s | provider=%s | model_id=%s",
+            error.message,
+            error.provider if hasattr(error, "provider") else "unknown",
+            error.model_id if hasattr(error, "model_id") else "unknown",
+        )
     elif isinstance(error, DatabaseError):
         key = "error_db_temporary" if error.retryable else "error_db_permanent"
         await processing_msg.edit_text(l10n.get(key))

@@ -470,6 +470,8 @@ class OpenAIAdapter(BaseProviderAdapter):
         1. В поле images сообщения (массив base64 data URLs)
         2. В поле content как data URL (если модель возвращает напрямую)
         3. В content как часть multipart ответа
+        4. В поле tool_calls (если модель использует tools для генерации)
+        5. В других полях сообщения
 
         Args:
             message: Объект сообщения от API (ChatCompletionMessage).
@@ -480,11 +482,29 @@ class OpenAIAdapter(BaseProviderAdapter):
         # Проверяем поле images (RouterAI формат)
         image_url = self._extract_from_images_field(message)
         if image_url:
+            logger.debug("Изображение найдено в поле images")
             return image_url
 
         # Проверяем content
         content = message.content
-        return self._extract_from_content(content)
+        image_url = self._extract_from_content(content)
+        if image_url:
+            logger.debug("Изображение найдено в поле content")
+            return image_url
+
+        # Проверяем tool_calls (если модель использует tools)
+        image_url = self._extract_from_tool_calls(message)
+        if image_url:
+            logger.debug("Изображение найдено в tool_calls")
+            return image_url
+
+        # Проверяем все атрибуты сообщения на наличие изображений
+        image_url = self._extract_from_any_attr(message)
+        if image_url:
+            logger.debug("Изображение найдено в других атрибутах")
+            return image_url
+
+        return None
 
     def _extract_from_images_field(self, message: Any) -> str | None:
         """Извлечь изображение из поля images (RouterAI формат).
@@ -492,9 +512,27 @@ class OpenAIAdapter(BaseProviderAdapter):
         API может возвращать images в разных форматах:
         1. Строка с base64 или data URL: ["data:image/png;base64,..."]
         2. Словарь с image_url: [{"type": "image_url", "image_url": {"url": "..."}}]
+        3. Словарь с прямым url: [{"url": "data:image/..."}]
+        4. Словарь с data: [{"data": "base64..."}]
         """
         images = getattr(message, "images", None)
-        if not images or not isinstance(images, list) or len(images) == 0:
+        if not images:
+            return None
+
+        # Если images - это не список, пытаемся преобразовать
+        if not isinstance(images, list):
+            # Может быть это строка или словарь напрямую
+            if isinstance(images, str):
+                if images.startswith("data:image"):
+                    return images
+                return f"data:image/png;base64,{images}"
+            if isinstance(images, dict):
+                # Обрабатываем как один элемент
+                images = [images]
+            else:
+                return None
+
+        if len(images) == 0:
             return None
 
         first_image = images[0]
@@ -504,15 +542,40 @@ class OpenAIAdapter(BaseProviderAdapter):
             if first_image.startswith("data:image"):
                 return first_image
             # Если это просто base64, оборачиваем в data URL
-            return f"data:image/png;base64,{first_image}"
+            if len(first_image) > 100:  # Вероятно base64
+                return f"data:image/png;base64,{first_image}"
+            return None
 
         # Формат 2: словарь {"type": "image_url", "image_url": {"url": "..."}}
-        if isinstance(first_image, dict) and first_image.get("type") == "image_url":
-            image_url_obj = first_image.get("image_url", {})
-            if isinstance(image_url_obj, dict):
-                url = image_url_obj.get("url")
-                if url and isinstance(url, str):
-                    return str(url)
+        if isinstance(first_image, dict):
+            # Проверяем стандартный формат OpenAI
+            if first_image.get("type") == "image_url":
+                image_url_obj = first_image.get("image_url", {})
+                if isinstance(image_url_obj, dict):
+                    url = image_url_obj.get("url")
+                    if url and isinstance(url, str):
+                        return str(url)
+                # Может быть image_url - это строка напрямую
+                if isinstance(image_url_obj, str):
+                    return image_url_obj
+
+            # Формат 3: прямой url в словаре
+            url = first_image.get("url")
+            if url and isinstance(url, str):
+                if url.startswith("data:image") or url.startswith("http"):
+                    return url
+
+            # Формат 4: data в словаре
+            data = first_image.get("data")
+            if data and isinstance(data, str):
+                if data.startswith("data:image"):
+                    return data
+                return f"data:image/png;base64,{data}"
+
+            # Формат 5: base64 в словаре
+            base64_data = first_image.get("base64")
+            if base64_data and isinstance(base64_data, str):
+                return f"data:image/png;base64,{base64_data}"
 
         return None
 
@@ -581,6 +644,88 @@ class OpenAIAdapter(BaseProviderAdapter):
         url = image_url_obj.get("url")
         if url and isinstance(url, str):
             return str(url)
+        return None
+
+    def _extract_from_tool_calls(self, message: Any) -> str | None:
+        """Извлечь изображение из tool_calls (если модель использует tools).
+
+        Некоторые модели могут возвращать изображения через tool calls.
+        """
+        tool_calls = getattr(message, "tool_calls", None)
+        if not tool_calls or not isinstance(tool_calls, list):
+            return None
+
+        for tool_call in tool_calls:
+            if not isinstance(tool_call, dict):
+                continue
+
+            # Проверяем function arguments
+            function = tool_call.get("function", {})
+            if isinstance(function, dict):
+                arguments = function.get("arguments")
+                if arguments:
+                    # Пытаемся распарсить JSON arguments
+                    import json
+                    try:
+                        if isinstance(arguments, str):
+                            args_dict = json.loads(arguments)
+                        else:
+                            args_dict = arguments
+                        
+                        # Ищем изображение в arguments
+                        if isinstance(args_dict, dict):
+                            for key, value in args_dict.items():
+                                if isinstance(value, str) and value.startswith("data:image"):
+                                    return value
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+
+        return None
+
+    def _extract_from_any_attr(self, message: Any) -> str | None:
+        """Проверить все атрибуты сообщения на наличие изображений.
+
+        Это последняя попытка найти изображение в любом поле сообщения.
+        """
+        # Получаем все атрибуты сообщения
+        attrs_to_check = [
+            "image",
+            "image_url",
+            "image_data",
+            "output",
+            "result",
+            "data",
+        ]
+
+        for attr_name in attrs_to_check:
+            if not hasattr(message, attr_name):
+                continue
+
+            value = getattr(message, attr_name)
+            if not value:
+                continue
+
+            # Если это строка с data URL
+            if isinstance(value, str) and value.startswith("data:image"):
+                return value
+
+            # Если это список, проверяем первый элемент
+            if isinstance(value, list) and len(value) > 0:
+                first_item = value[0]
+                if isinstance(first_item, str) and first_item.startswith("data:image"):
+                    return first_item
+                if isinstance(first_item, dict):
+                    # Рекурсивно проверяем словарь
+                    for key, val in first_item.items():
+                        if isinstance(val, str) and val.startswith("data:image"):
+                            return val
+
+            # Если это словарь
+            if isinstance(value, dict):
+                for key, val in value.items():
+                    if isinstance(val, str) and val.startswith("data:image"):
+                        return val
+
         return None
 
     async def _generate_image_via_images_api(
@@ -693,6 +838,19 @@ class OpenAIAdapter(BaseProviderAdapter):
 
         # Формируем мультимодальное сообщение с изображением и промптом
         # Формат соответствует OpenAI Vision API
+        # Для Gemini моделей добавляем явную инструкцию о генерации изображения
+        is_gemini = "gemini" in model_id.lower()
+        
+        # Улучшаем промпт для Gemini, чтобы модель точно понимала, что нужно вернуть изображение
+        enhanced_prompt = prompt
+        if is_gemini:
+            enhanced_prompt = (
+                f"{prompt}\n\n"
+                "IMPORTANT: You must generate and return an image based on the uploaded photo and description above. "
+                "The image should be a greeting card that incorporates the person from the uploaded photo. "
+                "Return the generated image as a data URL (data:image/png;base64,...)."
+            )
+        
         messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "user",
@@ -705,7 +863,7 @@ class OpenAIAdapter(BaseProviderAdapter):
                     },
                     {
                         "type": "text",
-                        "text": prompt,
+                        "text": enhanced_prompt,
                     },
                 ],
             }
@@ -715,6 +873,10 @@ class OpenAIAdapter(BaseProviderAdapter):
         extra_body = {}
         if self._uses_chat_completions_for_images():
             extra_body["modalities"] = ["image", "text"]
+            # Для Gemini может потребоваться явное указание, что нужен только image
+            if is_gemini:
+                # Некоторые Gemini модели требуют image_only параметр
+                extra_body["image_only"] = True
 
         response = await self._client.chat.completions.create(
             model=model_id,
@@ -729,12 +891,40 @@ class OpenAIAdapter(BaseProviderAdapter):
         image_url = self._extract_image_from_message(message)
 
         if not image_url:
-            # Если изображение не найдено, проверяем текстовый content
+            # Если изображение не найдено, логируем полную структуру ответа для диагностики
             content = message.content or ""
-            logger.warning(
-                "Изображение не найдено в ответе редактирования, content='%s'",
-                content[:200] if content else "(пусто)",
+            has_images = hasattr(message, "images") and message.images
+            images_value = getattr(message, "images", None)
+            
+            # Логируем все доступные атрибуты сообщения
+            message_attrs = {
+                "content": content[:500] if content else None,
+                "has_images_attr": has_images,
+                "images_value": str(images_value)[:500] if images_value else None,
+                "message_type": type(message).__name__,
+                "all_attrs": [attr for attr in dir(message) if not attr.startswith("_")],
+            }
+            
+            logger.error(
+                "Изображение не найдено в ответе редактирования | "
+                "model=%s | prompt='%s' | "
+                "content='%s' | has_images=%s | images_value=%s | "
+                "message_attrs=%s",
+                model_id,
+                prompt[:150],
+                content[:300] if content else "(пусто)",
+                has_images,
+                str(images_value)[:200] if images_value else None,
+                message_attrs,
             )
+            
+            # Пытаемся извлечь изображение из raw_response для дополнительной диагностики
+            try:
+                raw_dict = message.model_dump() if hasattr(message, "model_dump") else {}
+                logger.debug("Полная структура message: %s", str(raw_dict)[:1000])
+            except Exception as e:
+                logger.debug("Не удалось сериализовать message: %s", e)
+            
             raise GenerationError(
                 "Модель не сгенерировала отредактированное изображение. "
                 "Попробуйте переформулировать запрос.",
