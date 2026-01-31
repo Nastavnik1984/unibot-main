@@ -366,6 +366,12 @@ class AppSettings(BaseModel):
     #   - Telegram должен иметь доступ к этому домену
     domain: str | None = None
 
+    # Запускать ли бота в режиме разработки (без домена).
+    # True — локально запускается polling (конфликт с webhook на Amvera).
+    # False — бот не запускается локально, работает только на Amvera по webhook.
+    # Переменная: APP__BOT_ENABLED (по умолчанию True).
+    bot_enabled: bool = True
+
     @property
     def is_production(self) -> bool:
         """Проверить, работает ли приложение в production mode.

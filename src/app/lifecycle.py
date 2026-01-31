@@ -192,9 +192,42 @@ class ApplicationLifecycle:
         assert self.bot is not None
         assert self.dp is not None
 
+        # === ФАЗА 1: Параллельная инициализация ===
+        # В dev при bot_enabled=false бот не запускаем — работает только webhook на Amvera
+        if not self.settings.app.bot_enabled:
+            logger.info(
+                "🔧 Development mode: бот отключён (APP__BOT_ENABLED=false). "
+                "Работает только Amvera по webhook."
+            )
+            self._ai_service, _ = await asyncio.gather(
+                asyncio.to_thread(create_ai_service),
+                asyncio.to_thread(init_localization),
+            )
+            assert self._ai_service is not None, "AI service initialization failed"
+            setup_bot(
+                self.dp,
+                self.yaml_config,
+                self._ai_service,
+                self.bot,
+                self.settings.channel,
+            )
+            await self._start_scheduler(app)
+            self._start_background_task(
+                self._register_commands_background(),
+                "register_bot_commands",
+            )
+            self._start_background_task(
+                self._log_startup_urls(),
+                "log_startup_urls",
+            )
+            self._start_background_task(
+                self._cleanup_stuck_generations(),
+                "cleanup_stuck_generations",
+            )
+            return
+
         logger.info("🔧 Development mode: запускаю long polling")
 
-        # === ФАЗА 1: Параллельная инициализация ===
         # Удаляем webhook параллельно с инициализацией AI и локализации
         webhook_task = asyncio.create_task(
             remove_webhook(self.bot),
