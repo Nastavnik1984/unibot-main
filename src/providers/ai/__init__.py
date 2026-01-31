@@ -6,12 +6,15 @@
 Поддерживаемые провайдеры:
 - OpenRouter (https://openrouter.ai) — агрегатор моделей
 - RouterAI (https://routerai.ru) — российский сервис
+- Replicate (https://replicate.com) — платформа ML-моделей (InstantID для открыток)
 
-Оба провайдера OpenAI-совместимые, работают через единый OpenAIAdapter.
+OpenRouter и RouterAI — OpenAI-совместимые, работают через единый OpenAIAdapter.
+Replicate — отдельный адаптер для моделей с сохранением лица.
 
 Пример использования:
-    from src.providers.ai import OpenAIAdapter
+    from src.providers.ai import OpenAIAdapter, ReplicateAdapter
 
+    # Для текста/изображений
     adapter = OpenAIAdapter(
         api_key="sk-or-v1-...",
         base_url="https://openrouter.ai/api/v1",
@@ -19,6 +22,15 @@
     result = await adapter.generate(
         model_id="openai/gpt-4o",
         prompt="Привет!",
+    )
+
+    # Для открыток с сохранением лица
+    replicate = ReplicateAdapter(api_key="r8_...")
+    result = await replicate.generate(
+        model_id="zsxkib/instant-id",
+        prompt="New Year card",
+        generation_type=GenerationType.POSTCARD,
+        image_data=face_photo_bytes,
     )
 """
 
@@ -30,6 +42,7 @@ from src.providers.ai.base import (
     GenerationType,
 )
 from src.providers.ai.openai_provider import OpenAIAdapter
+from src.providers.ai.replicate_provider import ReplicateAdapter
 
 __all__ = [
     "BaseProviderAdapter",
@@ -39,4 +52,5 @@ __all__ = [
     "GenerationType",
     "OpenAIAdapter",
     "ProviderNotAvailableError",
+    "ReplicateAdapter",
 ]

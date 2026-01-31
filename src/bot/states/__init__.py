@@ -14,5 +14,12 @@ from src.bot.states.chatgpt import ChatGPTStates
 from src.bot.states.edit_image import EditImageStates
 from src.bot.states.generate import GenerateStates
 from src.bot.states.imagine import ImagineStates
+from src.bot.states.postcard import PostcardStates
 
-__all__ = ["ChatGPTStates", "EditImageStates", "GenerateStates", "ImagineStates"]
+__all__ = [
+    "ChatGPTStates",
+    "EditImageStates",
+    "GenerateStates",
+    "ImagineStates",
+    "PostcardStates",
+]

@@ -30,6 +30,19 @@ if TYPE_CHECKING:
 # Папка для логов
 LOGS_DIR = DATA_DIR / "logs"
 
+
+class FlushingRotatingFileHandler(RotatingFileHandler):
+    """RotatingFileHandler с сбросом буфера после каждой записи.
+
+    Чтобы новые строки сразу попадали в app.log (важно при падении
+    процесса или при просмотре логов в реальном времени).
+    """
+
+    @override
+    def emit(self, record: logging.LogRecord) -> None:
+        super().emit(record)
+        self.flush()
+
 # Максимальная длина сообщения в Telegram (с запасом для форматирования)
 # Telegram API ограничивает сообщения до 4096 символов
 TELEGRAM_MESSAGE_MAX_LENGTH = 3500
@@ -484,6 +497,9 @@ def setup_logging(
     """
     # Создаём папку для логов если её нет
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    log_file = LOGS_DIR / "app.log"
+    # Чтобы было видно, куда пишутся логи (особенно если новых записей не видно)
+    print(f"Логи приложения: {log_file.resolve()}", flush=True)
 
     # Компактный формат: короткий год, без лишних пробелов
     log_format = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
@@ -514,10 +530,10 @@ def setup_logging(
     console_handler.setFormatter(console_formatter)
     root_logger.addHandler(console_handler)
 
-    # Файловый вывод с ротацией (без цветов)
+    # Файловый вывод с ротацией (без цветов), сброс буфера после каждой записи
     # maxBytes=5MB, backupCount=3 — хранит app.log + app.log.1, app.log.2, app.log.3
-    file_handler = RotatingFileHandler(
-        LOGS_DIR / "app.log",
+    file_handler = FlushingRotatingFileHandler(
+        log_file,
         maxBytes=5 * 1024 * 1024,  # 5 МБ
         backupCount=3,
         encoding="utf-8",

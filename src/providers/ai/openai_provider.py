@@ -44,6 +44,7 @@ SUPPORTED_GENERATION_TYPES = frozenset(
         GenerationType.CHAT,
         GenerationType.IMAGE,
         GenerationType.IMAGE_EDIT,
+        GenerationType.POSTCARD,  # Открытки обрабатываются как image_edit
         GenerationType.TTS,
         GenerationType.STT,
     }
@@ -196,6 +197,9 @@ class OpenAIAdapter(BaseProviderAdapter):
             elif generation_type == GenerationType.IMAGE:
                 return await self._generate_image(model_id, prompt, **kwargs)
             elif generation_type == GenerationType.IMAGE_EDIT:
+                return await self._generate_image_edit(model_id, prompt, **kwargs)
+            elif generation_type == GenerationType.POSTCARD:
+                # Открытки обрабатываются как редактирование изображений
                 return await self._generate_image_edit(model_id, prompt, **kwargs)
             elif generation_type == GenerationType.TTS:
                 return await self._generate_tts(model_id, prompt, **kwargs)

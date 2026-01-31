@@ -329,6 +329,15 @@ def get_command_registry() -> CommandRegistry:
         ).router,
     )
 
+    # /postcard — генератор праздничных открыток
+    # Создание красивых открыток из фото пользователя
+    _registry.register(
+        name="postcard",
+        router_factory=lambda: __import__(
+            "src.bot.handlers.postcard", fromlist=["router"]
+        ).router,
+    )
+
     # /generate — генерация описаний товаров для маркетплейсов
     # Использует GPT-5 Nano для создания продающих описаний
     _registry.register(

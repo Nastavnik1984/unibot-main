@@ -23,6 +23,8 @@ if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
 # Импорты после sys.path, иначе не найдёт модуль src при запуске python src/main.py
+import logging  # noqa: E402
+
 from src.app import create_app  # noqa: E402
 from src.config.settings import settings  # noqa: E402
 from src.utils.logging import setup_logging  # noqa: E402
@@ -35,6 +37,9 @@ setup_logging(
     telegram_settings=settings.logging.telegram,
     bot_token=settings.bot.token.get_secret_value(),
 )
+
+_logger = logging.getLogger(__name__)
+_logger.info("Unibot: логирование настроено, загрузка приложения")
 
 # Создаём FastAPI приложение
 app = create_app()
