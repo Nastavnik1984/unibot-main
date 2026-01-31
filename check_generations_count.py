@@ -48,10 +48,3 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
-<<<<<<< HEAD
-
-=======
->>>>>>> c3104b25aeb187ae03f5f689dca35f4d6e372361

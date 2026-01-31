@@ -39,10 +39,3 @@ class PostcardStates(StatesGroup):
     # Шаг 3: Ввод текста поздравления
     # Пользователь вводит персональное поздравление или пропускает этот шаг
     waiting_for_greeting_text = State()
-
-
-
-<<<<<<< HEAD
-
-=======
->>>>>>> c3104b25aeb187ae03f5f689dca35f4d6e372361

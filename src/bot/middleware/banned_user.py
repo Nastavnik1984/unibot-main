@@ -189,11 +189,3 @@ def create_banned_user_middleware() -> BannedUserMiddleware:
     from src.db.base import DatabaseSession
 
     return BannedUserMiddleware(session_factory=DatabaseSession)
-
-
-
-
-<<<<<<< HEAD
-
-=======
->>>>>>> c3104b25aeb187ae03f5f689dca35f4d6e372361

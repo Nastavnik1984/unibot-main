@@ -27,10 +27,3 @@ class GenerateStates(StatesGroup):
     # Пользователь вводит название товара и минимальную информацию о нём
     waiting_for_product_info = State()
 
-
-
-
-<<<<<<< HEAD
-
-=======
->>>>>>> c3104b25aeb187ae03f5f689dca35f4d6e372361
