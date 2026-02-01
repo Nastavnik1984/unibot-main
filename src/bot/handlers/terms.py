@@ -96,15 +96,30 @@ async def callback_accept_terms(callback: CallbackQuery, l10n: Localization) -> 
         callback: Callback-запрос от кнопки «Принимаю».
         l10n: Объект локализации.
     """
+    logger.info(
+        "Получен callback legal:accept от пользователя %d",
+        callback.from_user.id if callback.from_user else 0,
+    )
+    
     if (
         callback.message is None
         or isinstance(callback.message, InaccessibleMessage)
         or callback.from_user is None
     ):
+        logger.warning(
+            "Некорректный callback: message=%s, from_user=%s",
+            callback.message is None,
+            callback.from_user is None,
+        )
         await callback.answer(l10n.get("error_callback_data"))
         return
 
     legal_config = yaml_config.legal
+    logger.debug(
+        "Обработка принятия условий: user_id=%d, version=%s",
+        callback.from_user.id,
+        legal_config.version,
+    )
 
     # Сохраняем согласие в БД
     registration_bonus = 0
@@ -125,13 +140,24 @@ async def callback_accept_terms(callback: CallbackQuery, l10n: Localization) -> 
             return
 
         # Сохраняем согласие
-        await repo.accept_terms(user, legal_config.version)
-
-        logger.info(
-            "Пользователь принял условия: id=%d, version=%s",
-            callback.from_user.id,
-            legal_config.version,
-        )
+        try:
+            await repo.accept_terms(user, legal_config.version)
+            logger.info(
+                "Пользователь принял условия: id=%d, version=%s",
+                callback.from_user.id,
+                legal_config.version,
+            )
+        except Exception as e:
+            logger.exception(
+                "Ошибка при сохранении согласия: user_id=%d, error=%s",
+                callback.from_user.id,
+                e,
+            )
+            await callback.answer(
+                "❌ Ошибка при сохранении. Попробуйте ещё раз.",
+                show_alert=True,
+            )
+            return
 
         # Начисляем бонус при регистрации (если биллинг включён и бонус ещё не начислен)
         # Проверяем флаг registration_bonus_granted, а не баланс

@@ -34,3 +34,4 @@ Write-Host "Gotovo. Istoriya perepisana, .env ubran, push vypolnen." -Foreground
 
 
 
+
