@@ -37,3 +37,5 @@ Write-Host "Gotovo. Sinhronizaciya s GitHub vypolnena." -ForegroundColor Green
 Write-Host "V Cursor nazhmi obnovleniye v paneli Source Control." -ForegroundColor Gray
 
 
+
+
