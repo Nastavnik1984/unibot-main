@@ -32,6 +32,7 @@ from src.config.yaml_config import yaml_config
 from src.db.base import DatabaseSession
 from src.db.repositories.user_repo import UserRepository
 from src.services.billing_service import create_billing_service
+from src.services.referral_service import create_referral_service
 from src.utils.i18n import Localization
 from src.utils.logging import get_logger
 
@@ -141,12 +142,12 @@ async def callback_accept_terms(callback: CallbackQuery, l10n: Localization) -> 
 
         # Сохраняем согласие
         try:
-        await repo.accept_terms(user, legal_config.version)
-        logger.info(
-            "Пользователь принял условия: id=%d, version=%s",
-            callback.from_user.id,
-            legal_config.version,
-        )
+            await repo.accept_terms(user, legal_config.version)
+            logger.info(
+                "Пользователь принял условия: id=%d, version=%s",
+                callback.from_user.id,
+                legal_config.version,
+            )
         except Exception as e:
             logger.exception(
                 "Ошибка при сохранении согласия: user_id=%d, error=%s",
@@ -158,6 +159,25 @@ async def callback_accept_terms(callback: CallbackQuery, l10n: Localization) -> 
                 show_alert=True,
             )
             return
+
+        # Обрабатываем реферальную ссылку (если пользователь новый и пришёл по реферальной ссылке)
+        # Реферальный бонус начисляется только при первом принятии условий
+        referral_bonus = 0
+        if user.source and user.source.startswith("ref_"):
+            referral_service = create_referral_service(session)
+            # Обновляем пользователя после accept_terms
+            await session.refresh(user)
+            referral_result = await referral_service.process_referral(
+                invitee=user,
+                start_param=user.source,
+            )
+            if referral_result.success:
+                referral_bonus = referral_result.invitee_bonus
+                logger.info(
+                    "Реферальный бонус начислен после принятия условий: user_id=%d, bonus=%d",
+                    user.id,
+                    referral_bonus,
+                )
 
         # Начисляем бонус при регистрации (если биллинг включён и бонус ещё не начислен)
         # Проверяем флаг registration_bonus_granted, а не баланс
@@ -186,10 +206,16 @@ async def callback_accept_terms(callback: CallbackQuery, l10n: Localization) -> 
     else:
         await callback.message.answer(l10n.get("start_message"))
 
-    # Если начислен бонус — уведомляем пользователя
+    # Если начислен бонус при регистрации — уведомляем пользователя
     if registration_bonus > 0:
         await callback.message.answer(
             l10n.get("billing_registration_bonus", amount=registration_bonus)
+        )
+
+    # Если начислен реферальный бонус — уведомляем пользователя
+    if referral_bonus > 0:
+        await callback.message.answer(
+            l10n.get("referral_invitee_bonus", amount=referral_bonus)
         )
 
 
