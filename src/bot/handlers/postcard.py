@@ -249,12 +249,12 @@ async def _handle_generation_error(
             )
         else:
             await processing_msg.edit_text(l10n.get("generation_error"))
-        logger.error(
-            "Ошибка генерации открытки: %s | provider=%s | model_id=%s",
-            error.message,
-            error.provider if hasattr(error, "provider") else "unknown",
-            error.model_id if hasattr(error, "model_id") else "unknown",
-        )
+            logger.error(
+                "Ошибка генерации открытки: %s | provider=%s | model_id=%s",
+                error.message,
+                error.provider if hasattr(error, "provider") else "unknown",
+                error.model_id if hasattr(error, "model_id") else "unknown",
+            )
     elif isinstance(error, DatabaseError):
         key = "error_db_temporary" if error.retryable else "error_db_permanent"
         await processing_msg.edit_text(l10n.get(key))

@@ -141,12 +141,12 @@ async def callback_accept_terms(callback: CallbackQuery, l10n: Localization) -> 
 
         # Сохраняем согласие
         try:
-            await repo.accept_terms(user, legal_config.version)
-            logger.info(
-                "Пользователь принял условия: id=%d, version=%s",
-                callback.from_user.id,
-                legal_config.version,
-            )
+        await repo.accept_terms(user, legal_config.version)
+        logger.info(
+            "Пользователь принял условия: id=%d, version=%s",
+            callback.from_user.id,
+            legal_config.version,
+        )
         except Exception as e:
             logger.exception(
                 "Ошибка при сохранении согласия: user_id=%d, error=%s",

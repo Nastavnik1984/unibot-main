@@ -543,18 +543,18 @@ class OpenAIAdapter(BaseProviderAdapter):
                 return first_image
             # Если это просто base64, оборачиваем в data URL
             if len(first_image) > 100:  # Вероятно base64
-                return f"data:image/png;base64,{first_image}"
+                        return f"data:image/png;base64,{first_image}"
             return None
 
         # Формат 2: словарь {"type": "image_url", "image_url": {"url": "..."}}
         if isinstance(first_image, dict):
             # Проверяем стандартный формат OpenAI
             if first_image.get("type") == "image_url":
-                image_url_obj = first_image.get("image_url", {})
-                if isinstance(image_url_obj, dict):
-                    url = image_url_obj.get("url")
-                    if url and isinstance(url, str):
-                        return str(url)
+                        image_url_obj = first_image.get("image_url", {})
+            if isinstance(image_url_obj, dict):
+                url = image_url_obj.get("url")
+                if url and isinstance(url, str):
+                    return str(url)
                 # Может быть image_url - это строка напрямую
                 if isinstance(image_url_obj, str):
                     return image_url_obj
