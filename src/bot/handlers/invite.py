@@ -40,6 +40,8 @@ async def cmd_invite(message: Message, l10n: Localization, bot: Bot) -> None:
 
     telegram_id = message.from_user.id
 
+    logger.info("Обработка команды /invite для telegram_id=%d", telegram_id)
+
     try:
         async with DatabaseSession() as session:
             # Создаём сервис
@@ -47,8 +49,11 @@ async def cmd_invite(message: Message, l10n: Localization, bot: Bot) -> None:
 
             # Проверяем, включена ли реферальная программа
             if not referral_service.is_enabled():
+                logger.warning("Реферальная программа отключена для telegram_id=%d", telegram_id)
                 await message.answer(l10n.get("invite_disabled"))
                 return
+
+            logger.debug("Реферальная программа включена, получаем статистику")
 
             # Получаем пользователя
             user_repo = UserRepository(session)
@@ -73,6 +78,12 @@ async def cmd_invite(message: Message, l10n: Localization, bot: Bot) -> None:
             invite_link = referral_service.get_invite_link(user, bot_username)
 
         # Форматируем ответ
+        logger.debug(
+            "Формируем ответ: link=%s, referrals=%d, earnings=%d",
+            invite_link,
+            stats.total_referrals,
+            stats.total_earnings,
+        )
         response = l10n.get(
             "invite_info",
             link=invite_link,
@@ -95,11 +106,12 @@ async def cmd_invite(message: Message, l10n: Localization, bot: Bot) -> None:
 
         await message.answer(response)
 
-        logger.debug(
-            "Показана реферальная информация: user_id=%d, referrals=%d, earnings=%d",
+        logger.info(
+            "Реферальная информация успешно показана: user_id=%d, referrals=%d, earnings=%d, response_length=%d",
             user.id,
             stats.total_referrals,
             stats.total_earnings,
+            len(response),
         )
 
     except SQLAlchemyError:
